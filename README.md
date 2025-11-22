@@ -1,4 +1,4 @@
-# Library_Management_Project
+# Library_Management_System
 
 📚 Library Management System (Python + Streamlit)
 
