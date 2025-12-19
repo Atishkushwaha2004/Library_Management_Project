@@ -21,15 +21,15 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed_password.encode())
 
-# ---------------- DB CONNECTION ---------------- #
-conn = psycopg2.connect(
-    dbname="Library",
-    user="postgres",
-    password=os.getenv("DB_PASSWORD"),
-    host="localhost",
-    port="5432"
-)
-cursor = conn.cursor()
+# ---------------- NEON DB CONNECTION ---------------- #
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+try:
+    conn = psycopg2.connect(DATABASE_URL)
+    cursor = conn.cursor()
+except Exception as e:
+    st.error("❌ Database connection failed. Check DATABASE_URL in Streamlit Secrets.")
+    st.stop()
 
 # ---------------- TABLE ---------------- #
 cursor.execute("""
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS library (
 """)
 conn.commit()
 
-# ---------------- BACKEND ---------------- #
+# ---------------- BACKEND CLASS ---------------- #
 class Library:
 
     @staticmethod
@@ -149,6 +149,7 @@ if choice == "Create Account":
             Library.create_user(
                 (sid, name, roll, age, gmail, phone, year, branch, hashed_pwd)
             )
+
             st.success("Account Created Successfully")
             st.info(f"Your Library ID: {sid}")
 
@@ -262,4 +263,4 @@ elif choice == "Delete Account":
             Library.delete_user(sid)
             st.success("Account Deleted Successfully")
         else:
-            st.error("Invalid Student ID or Password")
+            st.error("Invalid Student ID or Password")
