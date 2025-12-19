@@ -5,10 +5,8 @@ import random
 import string
 from datetime import datetime
 import os
-from dotenv import load_dotenv
 
 # ---------------- CONFIG ---------------- #
-load_dotenv()
 st.set_page_config(page_title="Library Management System", page_icon="📚")
 st.title("📚 Library Management System")
 
@@ -21,14 +19,22 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed_password.encode())
 
-# ---------------- NEON DB CONNECTION ---------------- #
+# ---------------- DB CONNECTION ---------------- #
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+if not DATABASE_URL:
+    st.error("❌ DATABASE_URL not found. Add it in Streamlit Secrets.")
+    st.stop()
+
 try:
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(
+        DATABASE_URL,
+        sslmode="require",
+        connect_timeout=10
+    )
     cursor = conn.cursor()
 except Exception as e:
-    st.error("❌ Database connection failed. Check DATABASE_URL in Streamlit Secrets.")
+    st.error(f"❌ Database connection error: {e}")
     st.stop()
 
 # ---------------- TABLE ---------------- #
@@ -57,9 +63,8 @@ class Library:
 
     @staticmethod
     def id_generate():
-        alpha = random.choices(string.ascii_uppercase, k=2)
-        num = random.choices(string.digits, k=4)
-        return "LIB" + "".join(alpha + num)
+        return "LIB" + "".join(random.choices(string.ascii_uppercase, k=2)) + \
+               "".join(random.choices(string.digits, k=4))
 
     @staticmethod
     def create_user(data):
@@ -74,7 +79,6 @@ class Library:
     def find_user(sid, pwd):
         cursor.execute("SELECT * FROM library WHERE student_id=%s", (sid,))
         user = cursor.fetchone()
-
         if user and verify_password(pwd, user[9]):
             return user
         return None
@@ -144,13 +148,10 @@ if choice == "Create Account":
             st.error("Password must be 4 digits")
         else:
             sid = Library.id_generate()
-            hashed_pwd = hash_password(pwd)
-
             Library.create_user(
-                (sid, name, roll, age, gmail, phone, year, branch, hashed_pwd)
+                (sid, name, roll, age, gmail, phone, year, branch, hash_password(pwd))
             )
-
-            st.success("Account Created Successfully")
+            st.success("✅ Account Created Successfully")
             st.info(f"Your Library ID: {sid}")
 
 # ---------------- ISSUE BOOK ---------------- #
@@ -159,11 +160,10 @@ elif choice == "Issue Book":
 
     sid = st.text_input("Student ID")
     pwd = st.text_input("Password", type="password")
-    book = st.number_input("How many books to issue?", 1, 5)
+    book = st.number_input("Books to issue", 1, 5)
 
     if st.button("Issue"):
         user = Library.find_user(sid, pwd)
-
         if not user:
             st.error("Invalid Student ID or Password")
         elif user[11] + book > 5:
@@ -178,11 +178,10 @@ elif choice == "Submit Book":
 
     sid = st.text_input("Student ID")
     pwd = st.text_input("Password", type="password")
-    book = st.number_input("How many books to submit?", 1, 5)
+    book = st.number_input("Books to submit", 1, 5)
 
     if st.button("Submit"):
         user = Library.find_user(sid, pwd)
-
         if not user:
             st.error("Invalid Student ID or Password")
         elif user[11] < book:
@@ -200,7 +199,6 @@ elif choice == "Show Details":
 
     if st.button("Show"):
         user = Library.find_user(sid, pwd)
-
         if user:
             st.json({
                 "Student ID": user[1],
@@ -234,7 +232,6 @@ elif choice == "Update Details":
 
     if "edit" in st.session_state:
         u = st.session_state.edit
-
         name = st.text_input("Name", u[2])
         gmail = st.text_input("Email", u[5])
         phone = st.text_input("Phone", u[6])
@@ -243,9 +240,8 @@ elif choice == "Update Details":
         pwd2 = st.text_input("New Password (4 digits)", type="password")
 
         if st.button("Update"):
-            hashed_pwd2 = hash_password(pwd2)
             Library.update_user(
-                (name, gmail, phone, year, branch, hashed_pwd2, u[1])
+                (name, gmail, phone, year, branch, hash_password(pwd2), u[1])
             )
             st.success("Details Updated Successfully")
 
@@ -258,7 +254,6 @@ elif choice == "Delete Account":
 
     if st.button("Delete"):
         user = Library.find_user(sid, pwd)
-
         if user:
             Library.delete_user(sid)
             st.success("Account Deleted Successfully")
