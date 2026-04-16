@@ -25,7 +25,7 @@ This application allows students to create accounts, issue books, submit books, 
 - Last book submit time
 
 ### 🔐 Security
-- Passwords stored using bcrypt hashing
+- Passwords stored using bcrypt hashing 
 - Environment variables for database credentials
 
 ---
