@@ -5,7 +5,6 @@ A secure and interactive **Library Management System** built using **Python, Str
 This application allows students to create accounts, issue books, submit books, update details, and delete accounts with password authentication.    
 
 
-
 ## 🚀 Features
 
 ### 👤 Account Management
