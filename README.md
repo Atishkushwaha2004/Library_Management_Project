@@ -10,7 +10,7 @@ This application allows students to create accounts, issue books, submit books, 
 ### 👤 Account Management
 - Create new student account
 - Auto-generated unique Library ID
-- Secure password hashing using bcrypt
+- Secure password hashing using bcrypt 
 - Update student details
 - Delete student account
 
